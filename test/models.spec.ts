@@ -638,8 +638,12 @@ test('codexRequestBody bounds tool-call ids without losing their pairings', () =
   assert.notEqual(collisionIds[0], collisionIds[2])
 })
 
-/** One text-only message of any role, for request-body assembly. */
-function claudeMessage(id: string, role: Message['role'], text: string): Message {
+/** One text-only message of any conversational role, for request-body assembly. */
+function claudeMessage<Role extends 'system' | 'user' | 'assistant'>(
+  id: string,
+  role: Role,
+  text: string,
+): Extract<Message, { role: Role }> {
   return {
     id: MessageId(id),
     role,
@@ -647,7 +651,7 @@ function claudeMessage(id: string, role: Message['role'], text: string): Message
     source: role === 'assistant'
       ? { kind: 'model', provider: 'claude', model: 'claude-opus-5' }
       : { kind: 'user' },
-  }
+  } as Extract<Message, { role: Role }>
 }
 
 test('claudeRequestBody ships the cache breakpoints and never exceeds four', () => {

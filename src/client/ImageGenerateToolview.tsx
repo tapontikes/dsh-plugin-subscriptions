@@ -166,7 +166,9 @@ export function ImageGenerateToolview(props: ImageGenerateToolviewProps) {
   const t = props.t ?? fallbackTranslate
   if (block === undefined) return null
   const settled = 'kind' in block
-  const argsRaw = (settled ? block.call?.argsRaw : block.argsRaw) ?? ''
+  // DSH 0.2 splits running calls into `preparing` (no arguments yet) and
+  // `start` (complete arguments), so a preparing call has no args to show.
+  const argsRaw = (settled ? block.call?.argsRaw : block.phase === 'preparing' ? undefined : block.argsRaw) ?? ''
   let references = 0
   try {
     const args = JSON.parse(argsRaw)

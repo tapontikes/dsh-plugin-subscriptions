@@ -32,3 +32,16 @@ export const ToolCallId: (id: string) => ToolCallId = (() => {
 export type RpcResult<T> =
   | { ok: true; value: T }
   | { ok: false; error: { code: string; message: string; details: object } }
+
+/**
+ * The 3-argument RPC handler face the plugin's `/api` bridge calls. DSH 0.2
+ * widened `ConnectionRpcHandler` with a fourth `peer` argument; a function
+ * accepting fewer parameters still satisfies it, and the fetch bridge only
+ * ever passes the first three, so the plugin and its specs type handlers
+ * against this narrower face instead of either line's declaration.
+ */
+export type SubscriptionsRpcHandler = (
+  endpoint: string,
+  payload: unknown,
+  signal: AbortSignal,
+) => Promise<RpcResult<unknown>>

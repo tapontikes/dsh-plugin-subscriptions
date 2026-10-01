@@ -4,7 +4,6 @@ import { test } from 'node:test'
 import { ToolCallId } from '../src/compat.js'
 import { AccountTokenManager } from '../src/providers/accounts.js'
 import assert from 'node:assert/strict'
-import { MessageId } from '@deepseek-ai/dsh-llm'
 import type { ContentBlock, GenerateOptions, Message, StreamChunk } from '@deepseek-ai/dsh-llm'
 import type { AntigravitySession } from '../src/auth/store.js'
 import {
@@ -26,7 +25,7 @@ import {
   streamAntigravity,
   toAntigravityRequest,
 } from '../src/translate/antigravity.js'
-import type { TranslatableMessage } from '../src/translate/resolved.js'
+import type { LegacyMessage, LegacyToolResultBlock, TranslatableMessage } from '../src/translate/resolved.js'
 
 const oauth = { clientId: 'test-client.apps.example.invalid', clientSecret: 'test-secret' }
 const runtime = { baseURL: 'https://antigravity.example.invalid', onboard: false }
@@ -56,9 +55,8 @@ function routed(routes: Record<string, unknown | Response>, calls: RecordedCall[
   }
 }
 
-function message(role: Message['role'], content: ContentBlock[], source?: Message['source']): Message {
+function message(role: Message['role'], content: (ContentBlock | LegacyToolResultBlock)[], source?: Message['source']): LegacyMessage {
   return {
-    id: MessageId(`m-${Math.random().toString(36).slice(2)}`),
     role,
     content,
     source: source ?? (role === 'assistant'
@@ -67,11 +65,11 @@ function message(role: Message['role'], content: ContentBlock[], source?: Messag
   }
 }
 
-function options(messages: Message[]): GenerateOptions {
+function options(messages: readonly unknown[]): GenerateOptions {
   return {
     provider: 'antigravity',
     model: 'gemini-3-flash',
-    messages,
+    messages: messages as GenerateOptions['messages'],
     system: 'Be useful.',
     maxTokens: 2048,
     temperature: 0.2,
@@ -194,7 +192,7 @@ test('request conversion carries system, images, tools, tool results, and signed
       content: [{ type: 'image', mediaType: 'image/png', dataBase64: 'aGVsbG8=' }],
     },
   ]
-  const payload = toAntigravityRequest(options(messages as Message[]), messages, 'project-123')
+  const payload = toAntigravityRequest(options(messages), messages, 'project-123')
   assert.equal(payload.project, 'project-123')
   assert.equal(payload.request.systemInstruction?.parts[0].text, 'Be useful.')
   assert.equal(payload.request.tools?.[0].functionDeclarations[0].name, 'bash')

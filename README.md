@@ -80,7 +80,9 @@ Image generation and editing share same-provider account scheduling: try the def
 
 ### DSH compatibility
 
-The current release supports the published DSH `0.1.1-rc.2`, `0.1.2-alpha`/`rc`, `0.1.3-alpha`, `0.1.5-alpha`/`rc`, and `0.1.7-rc` lines, including `0.1.5-rc.2` and `0.1.7-rc.2`. The `0.1.5-alpha.1` peer-range anchor intentionally covers the later `0.1.5-alpha`, `0.1.5-rc`, and stable `0.1.5` builds under npm semver rules; the `0.1.7-rc.1` anchor likewise covers the later `0.1.7-rc` and stable `0.1.7` builds. DSH `0.1.6-alpha` and `0.1.7-alpha` are not included until they have been separately verified.
+The current release supports the published DSH `0.1.1-rc.2`, `0.1.2-alpha`/`rc`, `0.1.3-alpha`, `0.1.5-alpha`/`rc`, and `0.1.7-rc` lines, including `0.1.5-rc.2` and `0.1.7-rc.2`, and the DSH `0.2.0-rc` line. The `0.1.5-alpha.1` peer-range anchor intentionally covers the later `0.1.5-alpha`, `0.1.5-rc`, and stable `0.1.5` builds under npm semver rules; the `0.1.7-rc.1` anchor likewise covers the later `0.1.7-rc` and stable `0.1.7` builds. DSH `0.1.6-alpha` and `0.1.7-alpha` are not included until they have been separately verified.
+
+On DSH `0.2.0` the harness moved tool results from a `tool-result` content block to first-class `role: 'tool'` messages. The translators accept both shapes, so imported histories that still carry `tool-result` blocks keep working. The `0.2.0-rc.2` prerelease of `@deepseek-ai/dsh-client-ui-primitives` and `@deepseek-ai/dsh-client-store` ship without their runtime dependencies declared; `pnpm-workspace.yaml` restores them through `packageExtensions` so the node test suite resolves them.
 
 ### Managing accounts and pool models
 

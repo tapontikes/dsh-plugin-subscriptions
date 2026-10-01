@@ -79,7 +79,9 @@ Codex 编辑走 `/backend-api/codex/images/edits`，Grok 编辑走 `/v1/images/e
 
 ### DSH 兼容性
 
-当前版本支持已发布的 DSH `0.1.1-rc.2`、`0.1.2-alpha`/`rc`、`0.1.3-alpha`、`0.1.5-alpha`/`rc` 和 `0.1.7-rc` 版本线，包括 `0.1.5-rc.2` 和 `0.1.7-rc.2`。peer 范围使用 `0.1.5-alpha.1` 作为锚点，按照 npm semver 规则也覆盖之后的 `0.1.5-alpha`、`0.1.5-rc` 和稳定版 `0.1.5`；`0.1.7-rc.1` 锚点同样覆盖之后的 `0.1.7-rc` 和稳定版 `0.1.7`。DSH `0.1.6-alpha` 和 `0.1.7-alpha` 尚未单独验证，因此暂不纳入支持范围。
+当前版本支持已发布的 DSH `0.1.1-rc.2`、`0.1.2-alpha`/`rc`、`0.1.3-alpha`、`0.1.5-alpha`/`rc` 和 `0.1.7-rc` 版本线，包括 `0.1.5-rc.2` 和 `0.1.7-rc.2`，以及 DSH `0.2.0-rc` 版本线。peer 范围使用 `0.1.5-alpha.1` 作为锚点，按照 npm semver 规则也覆盖之后的 `0.1.5-alpha`、`0.1.5-rc` 和稳定版 `0.1.5`；`0.1.7-rc.1` 锚点同样覆盖之后的 `0.1.7-rc` 和稳定版 `0.1.7`。DSH `0.1.6-alpha` 和 `0.1.7-alpha` 尚未单独验证，因此暂不纳入支持范围。
+
+在 DSH `0.2.0` 中，工具结果从 `tool-result` 内容块迁移为独立的 `role: 'tool'` 消息。翻译层同时接受两种形态，因此仍携带 `tool-result` 块的导入历史可以继续工作。`@deepseek-ai/dsh-client-ui-primitives` 与 `@deepseek-ai/dsh-client-store` 的 `0.2.0-rc.2` 预发布版未声明其运行时依赖；`pnpm-workspace.yaml` 通过 `packageExtensions` 补回这些依赖，使 node 测试可以正常解析。
 
 ### 管理账号与 Pool 模型
 

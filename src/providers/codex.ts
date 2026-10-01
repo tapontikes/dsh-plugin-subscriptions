@@ -22,6 +22,7 @@ import type { ProviderId } from '../auth/store.js'
 import type { PoolAdapter } from './pool.js'
 import type { AttachmentStore } from '@deepseek-ai/dsh-attachment'
 import { resolveImages } from '../translate/resolved.js'
+import type { LegacyMessage } from '../translate/resolved.js'
 import { streamResponses, toResponsesInput, toResponsesTools } from '../translate/responses.js'
 import type { ResponsesRequestInput } from '../translate/responses.js'
 import {
@@ -670,13 +671,17 @@ export function codexRequestBody(
   }
 }
 
-/** Adapt the current harness's first-class tool messages at the Codex boundary. */
-export function projectCodexMessages(messages: readonly Message[]): Message[] {
+/**
+ * Adapt the current harness's first-class tool messages at the Codex boundary.
+ * DSH 0.2 dropped the `tool-result` content block, so the projected shape is
+ * the plugin's local legacy message rather than a harness `Message`.
+ */
+export function projectCodexMessages(messages: readonly (Message | LegacyMessage)[]): LegacyMessage[] {
   return messages.map((message) => {
     if (String(message.role) !== 'tool') return message
     const current = message as Message & { toolCallId?: string; isError?: boolean }
     const callId = current.toolCallId
-      ?? (current.source.kind === 'tool' ? String(current.source.callId) : undefined)
+      ?? (current.source?.kind === 'tool' ? String(current.source.callId) : undefined)
     if (callId === undefined) throw new LlmError('Codex tool result has no call id', 'INVALID_REQUEST')
     return {
       id: message.id,
@@ -684,7 +689,7 @@ export function projectCodexMessages(messages: readonly Message[]): Message[] {
       source: { kind: 'tool', callId: ToolCallId(callId) },
       content: [{
         type: 'tool-result',
-        toolCallId: ToolCallId(callId),
+        toolCallId: callId,
         content: [...message.content],
         ...current.isError === undefined ? {} : { isError: current.isError },
       }],

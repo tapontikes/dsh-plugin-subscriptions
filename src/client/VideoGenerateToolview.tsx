@@ -204,7 +204,9 @@ export function VideoGenerateToolview(props: VideoGenerateToolviewProps) {
   }, [fileName, loadVideo])
 
   if (block === undefined) return null
-  const argsRaw = (settled ? block.call?.argsRaw : block.argsRaw) ?? ''
+  // DSH 0.2 splits running calls into `preparing` (no arguments yet) and
+  // `start` (complete arguments), so a preparing call has no args to show.
+  const argsRaw = (settled ? block.call?.argsRaw : block.phase === 'preparing' ? undefined : block.argsRaw) ?? ''
   const title = `video_generate: ${derivePrompt(argsRaw)}`
   const text = settled ? resultText(block) : ''
   return (

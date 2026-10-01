@@ -667,7 +667,9 @@ function secondReasoningToolCallSse(): string {
   ])
 }
 
-/** The conversation handed back for the second request after the call ran. */
+/** The conversation handed back for the second request after the call ran.
+ * The result rides a legacy `tool-result` block (imported-history shape), so
+ * the fixture is cast through the plugin's legacy message type. */
 function toolRoundTripHistory(callId = 'call_A'): GenerateOptions['messages'] {
   return [
     {
@@ -680,12 +682,12 @@ function toolRoundTripHistory(callId = 'call_A'): GenerateOptions['messages'] {
       source: { kind: 'model', provider: 'copilot', model: 'gpt-5.6-sol' },
     },
     {
-      id: MessageId('m-b'),
+      id: 'm-b',
       role: 'user',
-      content: [{ type: 'tool-result', toolCallId: ToolCallId(callId), content: [{ type: 'text', text: 'file-a' }] }],
+      content: [{ type: 'tool-result', toolCallId: String(ToolCallId(callId)), content: [{ type: 'text', text: 'file-a' }] }],
       source: { kind: 'tool', callId: ToolCallId(callId) },
     },
-  ]
+  ] as unknown as GenerateOptions['messages']
 }
 
 /** A two-round tool-chain history: call_A and its result, then call_B and its result. */
@@ -702,12 +704,12 @@ function twoRoundHistory(): GenerateOptions['messages'] {
       source: { kind: 'model', provider: 'copilot', model: 'gpt-5.6-sol' },
     },
     {
-      id: MessageId('m-d'),
+      id: 'm-d',
       role: 'user',
-      content: [{ type: 'tool-result', toolCallId: ToolCallId('call_B'), content: [{ type: 'text', text: 'match' }] }],
+      content: [{ type: 'tool-result', toolCallId: String(ToolCallId('call_B')), content: [{ type: 'text', text: 'match' }] }],
       source: { kind: 'tool', callId: ToolCallId('call_B') },
     },
-  ]
+  ] as unknown as GenerateOptions['messages']
 }
 
 /** A wire-forced responses adapter with no discovery, over the global fetch stub. */

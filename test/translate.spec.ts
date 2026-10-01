@@ -6,7 +6,7 @@
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { LlmError, MessageId } from '@deepseek-ai/dsh-llm'
+import { LlmError } from '@deepseek-ai/dsh-llm'
 import { ToolCallId } from '../src/compat.js'
 import type { ContentBlock, Message, MessageSource, StreamChunk } from '@deepseek-ai/dsh-llm'
 import {
@@ -24,7 +24,7 @@ import {
   toAnthropicTools,
 } from '../src/translate/anthropic.js'
 import type { AnthropicMessage, AnthropicStreamEvent } from '../src/translate/anthropic.js'
-import { resolveImages, type TranslatableMessage } from '../src/translate/resolved.js'
+import { resolveImages, type LegacyMessage, type LegacyToolResultBlock, type TranslatableMessage } from '../src/translate/resolved.js'
 import { toChatMessages } from '../src/translate/chat-completions.js'
 
 let messageCounter = 0
@@ -32,23 +32,23 @@ let messageCounter = 0
 /** Build a bare message without touching the frozen constructors. */
 function message(
   role: Message['role'],
-  content: ContentBlock[],
+  content: (ContentBlock | LegacyToolResultBlock)[],
   source?: MessageSource,
-): Message {
+): LegacyMessage {
   const resolvedSource = source ?? (role === 'assistant'
     ? { kind: 'model' as const, provider: 'codex', model: 'gpt-5.1-codex' }
     : { kind: 'user' as const })
-  return { id: MessageId(`m-${++messageCounter}`), role, content, source: resolvedSource }
+  return { id: `m-${++messageCounter}`, role, content, source: resolvedSource }
 }
 
 function toolCall(id: string, name: string, args: string): ContentBlock {
   return { type: 'tool-call', id: ToolCallId(id), name, arguments: args }
 }
 
-function toolResult(callId: string, text: string, isError?: boolean): ContentBlock {
+function toolResult(callId: string, text: string, isError?: boolean): LegacyToolResultBlock {
   return {
     type: 'tool-result',
-    toolCallId: ToolCallId(callId),
+    toolCallId: String(ToolCallId(callId)),
     content: [{ type: 'text', text }],
     ...isError === undefined ? {} : { isError },
   }

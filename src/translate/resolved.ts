@@ -7,7 +7,7 @@
  */
 
 import { LlmError } from '@deepseek-ai/dsh-llm'
-import type { ContentBlock, Message, ToolResultBlock } from '@deepseek-ai/dsh-llm'
+import type { ContentBlock, Message, RequestMessage } from '@deepseek-ai/dsh-llm'
 import type { AttachmentStore, ImageAttachmentRef } from '@deepseek-ai/dsh-attachment'
 
 /** An image block with its bytes resolved to inline base64 for the wire. */
@@ -19,12 +19,38 @@ export interface ResolvedImagePart {
   dataBase64: string
 }
 
+/**
+ * Structural mirror of the pre-0.2 harness `ToolResultBlock`. DSH 0.2 moved
+ * tool results to first-class `role: 'tool'` messages and dropped the block,
+ * but imported histories and this plugin's own adapters still carry the block
+ * shape, so the translators accept it as a local type instead of an import.
+ */
+export interface LegacyToolResultBlock {
+  type: 'tool-result'
+  toolCallId: string
+  content: readonly (ContentBlock | LegacyToolResultBlock)[]
+  isError?: boolean
+}
+
 /** Translator input block: a harness block, with images pre-resolved. */
-export type TranslatableBlock = Exclude<ContentBlock, ToolResultBlock> | ResolvedImagePart | ResolvedToolResultBlock
+export type TranslatableBlock = ContentBlock | LegacyToolResultBlock | ResolvedImagePart | ResolvedToolResultBlock
 
 /** Tool results may themselves carry attachment-backed images. */
-export interface ResolvedToolResultBlock extends Omit<ToolResultBlock, 'content'> {
+export interface ResolvedToolResultBlock extends Omit<LegacyToolResultBlock, 'content'> {
   content: readonly TranslatableBlock[]
+}
+
+/**
+ * A message whose content may carry legacy `tool-result` blocks: the shape
+ * pre-0.2 harnesses produced and imported histories retain.
+ */
+export interface LegacyMessage {
+  role: 'system' | 'developer' | 'user' | 'assistant' | 'tool'
+  content: readonly (ContentBlock | LegacyToolResultBlock)[]
+  id?: string | undefined
+  source?: Message['source'] | undefined
+  toolCallId?: string | undefined
+  isError?: boolean | undefined
 }
 
 /**
@@ -66,12 +92,12 @@ export interface TranslatableMessage {
   role: 'system' | 'developer' | 'user' | 'assistant' | 'tool'
   content: readonly TranslatableBlock[]
   /** First-class tool result correlation in current harness messages. */
-  toolCallId?: string
+  toolCallId?: string | undefined
   /** Chat Completions correlation in imported histories. */
-  tool_call_id?: string
-  isError?: boolean
+  tool_call_id?: string | undefined
+  isError?: boolean | undefined
   /** Preserved for adapters whose provider-private replay metadata is required. */
-  source?: Message['source']
+  source?: Message['source'] | undefined
 }
 
 /** A route's cap on outgoing image size; stored attachments are never changed. */
@@ -113,12 +139,12 @@ export function imageRequestTarget(
  * @returns the same messages with image blocks resolved for the translators.
  */
 export async function resolveImages(
-  messages: readonly Message[],
+  messages: readonly (RequestMessage | LegacyMessage)[],
   attachments: AttachmentStore | undefined,
   signal?: AbortSignal,
   limit?: ImageRequestLimit,
 ): Promise<readonly TranslatableMessage[]> {
-  const hasImage = (block: ContentBlock): boolean => block.type === 'image'
+  const hasImage = (block: ContentBlock | LegacyToolResultBlock): boolean => block.type === 'image'
     || (block.type === 'tool-result' && block.content.some(hasImage))
   if (!messages.some(message => message.content.some(hasImage))) {
     return messages
@@ -144,7 +170,7 @@ export async function resolveImages(
     const stored = await attachments.readImage(ref, signal)
     return { data: stored.data, mediaType: stored.ref.mediaType, ref: stored.ref }
   }
-  const resolveBlock = async (block: ContentBlock): Promise<TranslatableBlock[]> => {
+  const resolveBlock = async (block: ContentBlock | LegacyToolResultBlock): Promise<TranslatableBlock[]> => {
     if (block.type === 'tool-result') {
       return [{ ...block, content: (await Promise.all(block.content.map(resolveBlock))).flat() }]
     }
